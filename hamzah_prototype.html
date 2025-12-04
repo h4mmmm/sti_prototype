@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum-Safe Lifecycle Manager</title>
+    <script src="hamzah_prototype.js"></script>
+    <link rel="stylesheet" href="hamzah_prototype.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <div id="view-login" class="login-container">
+        <div class="login-box">
+            <h1>QSLM</h1>
+            <p style="color: #94a3b8; margin-bottom: 20px;">Select User Role</p>
+            <div class="login-options">
+                <div class="login-card" onclick="login('worker')">
+                    <div class="icon-circle bg-blue"><i class="fas fa-user"></i></div>
+                    <h3>Worker</h3>
+                    <p>Data Entry & Upload</p>
+                </div>
+                <div class="login-card" onclick="login('admin')">
+                    <div class="icon-circle bg-orange"><i class="fas fa-user-shield"></i></div>
+                    <h3>Admin (CISO)</h3>
+                    <p>Governance & Risk</p>
+                </div>
+            </div>
+            <div style="margin-top:30px; background:rgba(255,255,255,0.05); padding:10px; border-radius:8px;">
+                <label style="color:#cbd5e1; font-size:0.9rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px;">
+                    <input type="checkbox" id="login-offline-mode"> 
+                    <span>Enable Air-Gapped Mode (Offline)</span>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <div id="app-container" class="hidden">
+        
+        <div class="toolbar">
+            <div class="brand">
+                QSLM <span id="role-badge" style="font-size:0.7rem; background:#334155; padding:2px 6px; border-radius:4px; margin-left:10px;">USER</span>
+            </div>
+            
+            <div class="toolbar-nav hidden" id="admin-nav">
+                <div class="nav-item active" id="nav-dashboard" onclick="switchView('dashboard')">Dashboard</div>
+            </div>
+
+            <div class="toolbar-right">
+                <div id="admin-notify" class="hidden" style="position:relative; margin-right:15px; cursor:pointer;">
+                    <i class="fas fa-bell" style="color:#94a3b8; font-size:1.1rem;"></i>
+                    <span id="notify-badge" class="notify-badge hidden">0</span>
+                </div>
+                
+                <div class="network-status" id="net-status">
+                    <span class="dot" id="net-dot"></span> <span id="net-text">ONLINE</span>
+                </div>
+                
+                <button class="btn btn-sm btn-outline" style="border-color:#ef4444; color:#ef4444" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </div>
+
+        <div class="main-container">
+            
+            <div id="view-worker" class="view-section hidden">
+                <div class="page-header">
+                    <h1>My Secure Workspace</h1>
+                    <p>Manage and classify sensitive assets.</p>
+                </div>
+                <div class="dashboard-row">
+                    <div class="card upload-card" style="flex:1;">
+                        <div style="text-align: center;">
+                            <div style="font-size: 3rem; margin-bottom: 10px;">📂</div>
+                            <h3>Upload New Asset</h3>
+                            <button class="btn btn-primary" onclick="openUploadModal()">Select File</button>
+                        </div>
+                    </div>
+                    <div class="card" style="flex:2;">
+                        <h3>My Recent Uploads</h3>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>File Name</th>
+                                    <th>Shelf Life</th>
+                                    <th>Encryption</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="worker-table"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-dashboard" class="view-section hidden">
+                
+                <div id="alert-banner" class="threat-panel hidden" style="margin-bottom:20px; border-color:#f59e0b; background:#fffbeb;">
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <div class="icon-box-danger" style="background:#fcd34d; color:#78350f;"><i class="fas fa-exclamation-triangle"></i></div>
+                        <div>
+                            <h4 style="margin:0; color:#78350f;">Action Required</h4>
+                            <p style="margin:0; font-size:0.8rem; color:#92400e;">
+                                <span id="quarantine-count">0</span> files are in Quarantine (Policy Violation). Review immediately.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-grid-top">
+                    <div class="card timeline-card">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                            <h4><i class="fas fa-clock"></i> Quantum Risk Simulator</h4>
+                            <div class="year-display" id="year-display">2025</div>
+                        </div>
+                        <input type="range" min="2025" max="2035" value="2025" class="time-slider" id="time-slider" oninput="updateTimeline(this.value)">
+                        <div style="display:flex; justify-content:space-between; font-size:0.7rem; color:#64748b; margin-top:5px;">
+                            <span>2025</span>
+                            <span style="color:#ef4444; font-weight:bold;">2030 (CRQC)</span>
+                            <span>2035</span>
+                        </div>
+                        <div style="margin-top:15px; border-top:1px solid #e2e8f0; padding-top:10px; display:flex; gap:10px;">
+                            <button class="btn btn-sm btn-danger-outline" style="flex:1; justify-content:center;" onclick="simulateExfiltration()">
+                                <i class="fas fa-user-secret"></i> Sim: Exfiltration
+                            </button>
+                            <button class="btn btn-sm btn-primary" style="flex:1; justify-content:center; background:#1e293b; border-color:#1e293b;" onclick="runStressTest()">
+                                <i class="fas fa-microchip"></i> Sim: Brute Force
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="card policy-card">
+                        <h4><i class="fas fa-shield-alt"></i> Active Governance</h4>
+                        <table class="data-table" style="margin-top:10px;">
+                            <tbody>
+                                <tr>
+                                    <td><strong>Mandate PQC (Kyber Only)</strong><br><span style="font-size:0.75rem; color:#64748b;">Quarantine RSA uploads</span></td>
+                                    <td style="text-align:right;">
+                                        <label class="switch-sm">
+                                            <input type="checkbox" id="policy-pqc-only" checked>
+                                            <span class="slider-sm round"></span>
+                                        </label>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Simulate Network Failure</strong><br><span style="font-size:0.75rem; color:#64748b;">Test Rollback Resilience</span></td>
+                                    <td style="text-align:right;">
+                                        <label class="switch-sm">
+                                            <input type="checkbox" id="sim-failure">
+                                            <span class="slider-sm round"></span>
+                                        </label>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="dashboard-grid-bottom">
+                    <div class="card inventory-card">
+                        <h3>Master Asset Inventory</h3>
+                        <table class="data-table">
+                            <thead><tr><th>Asset ID</th><th>Location</th><th>Algorithm</th><th>Status</th><th>Action</th></tr></thead>
+                            <tbody id="inventory-table"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="card logs-card">
+                        <div class="logs-header">
+                            <h4><i class="fas fa-list-ul"></i> Live Security Events</h4>
+                        </div>
+                        <div class="logs-body" id="live-logs"></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal-upload">
+        <div class="modal-box">
+            <h2 style="margin-top:0;">Secure Upload Protocol</h2>
+            
+            <div style="margin-bottom: 15px;">
+                <label>Select File Payload</label>
+                <select id="upload-file-select" style="width:100%; padding:10px; margin-top:5px; border:1px solid #e2e8f0; border-radius:6px;">
+                    <option value="strategy_2035.docx">strategy_2035.docx</option>
+                    <option value="weekly_lunch_menu.pdf">weekly_lunch_menu.pdf</option>
+                    <option value="employee_ssn_db.sql">employee_ssn_db.sql</option>
+                    <option value="malware.exe">malware.exe (Test Input Validation)</option>
+                </select>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label>Data Sensitivity (Shelf Life)</label>
+                <p style="font-size:0.75rem; color:#64748b; margin:2px 0 5px 0;">How long must this data remain confidential?</p>
+                <select id="upload-retention" style="width:100%; padding:10px; border:1px solid #e2e8f0; border-radius:6px;">
+                    <option value="Short">Short Term (< 1 Year)</option>
+                    <option value="Medium" selected>Medium Term (1-5 Years)</option>
+                    <option value="Long">Long Term (> 10 Years) [HNDL Risk]</option>
+                </select>
+            </div>
+
+            <label>Key Encapsulation Mechanism (KEM)</label>
+            <div class="toggle-group">
+                <div class="toggle-opt rsa selected" id="opt-rsa" onclick="selectUploadMode('RSA')"><div>🔓</div> <strong>Legacy (RSA)</strong></div>
+                <div class="toggle-opt kyber" id="opt-kyber" onclick="selectUploadMode('Kyber')"><div>🛡️</div> <strong>Kyber (PQC)</strong></div>
+            </div>
+            
+            <div id="upload-error" style="display:none; margin-top:15px; background:#fef2f2; border:1px solid #fecaca; color:#ef4444; padding:10px; border-radius:6px; font-size:0.9rem;"></div>
+            
+            <div style="margin-top: 25px; display:flex; justify-content:flex-end; gap:10px;">
+                <button class="btn btn-outline" onclick="closeUploadModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="executeUpload()">Encrypt & Ingest</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal-manage">
+        <div class="modal-box">
+            <h2 style="margin-top:0;">Asset Lifecycle Management</h2>
+            
+            <div style="background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #e2e8f0; margin-bottom:20px;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                    <span style="color:#64748b; font-weight:600;">File:</span>
+                    <span id="manage-filename" style="font-family:monospace;">...</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                    <span style="color:#64748b; font-weight:600;">Shelf Life:</span>
+                    <span id="manage-sensitivity">...</span>
+                </div>
+                <div style="margin-top:10px; padding-top:10px; border-top:1px solid #e2e8f0; font-size:0.9rem;" id="manage-rec">
+                    Calculating...
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+                <button class="btn btn-outline" style="flex-direction:column; padding:20px; border-color:#cbd5e1; height:auto;" onclick="pruneAsset()">
+                    <div style="font-size:1.5rem; color:#64748b; margin-bottom:10px;"><i class="fas fa-trash-alt"></i></div>
+                    <strong style="color:#334155;">Decommission</strong>
+                    <span style="font-size:0.75rem; color:#94a3b8; font-weight:normal; margin-top:5px;">Secure Wipe & Remove<br>(End of Life)</span>
+                </button>
+
+                <button class="btn btn-outline" style="flex-direction:column; padding:20px; border-color:#3b82f6; height:auto;" onclick="triggerMigration()">
+                    <div style="font-size:1.5rem; color:#3b82f6; margin-bottom:10px;"><i class="fas fa-shield-alt"></i></div>
+                    <strong style="color:#1d4ed8;">Upgrade Crypto</strong>
+                    <span style="font-size:0.75rem; color:#64748b; font-weight:normal; margin-top:5px;">Migrate to Kyber-512<br>(Preserve & Protect)</span>
+                </button>
+            </div>
+
+            <div style="margin-top: 20px; text-align:center;">
+                <a href="#" onclick="closeManageModal()" style="color:#94a3b8; text-decoration:none; font-size:0.9rem;">Cancel</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal-share">
+        <div class="modal-box">
+            <h2 style="margin-top:0;"><i class="fas fa-link"></i> Asset Access Link</h2>
+            <div id="share-content"></div>
+            <div style="margin-top: 20px; display:flex; justify-content:flex-end;">
+                <button class="btn btn-outline" onclick="document.getElementById('modal-share').style.display='none'">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal-wizard">
+        <div class="modal-box" style="width: 700px;">
+            <h2 style="margin-top:0;">Quantum Migration Protocol</h2>
+            <div class="step-track">
+                <div class="step-line"></div>
+                <div class="step-dot active" id="wiz-step-1">1</div>
+                <div class="step-dot" id="wiz-step-2">2</div>
+                <div class="step-dot" id="wiz-step-3">3</div>
+            </div>
+            <div id="wiz-content" style="min-height: 80px; text-align:center; padding:20px;"></div>
+            <div class="terminal-window">
+                <div class="terminal-body" id="wiz-log">> SYSTEM READY...</div>
+            </div>
+            <div style="margin-top: 25px; display:flex; justify-content:flex-end; gap:10px;">
+                <button class="btn btn-outline" onclick="closeWizard()">Cancel</button>
+                <button class="btn btn-primary" id="wiz-btn" onclick="runWizardStep()">Next</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal-stress">
+        <div class="modal-box" style="width: 600px; background:#0f172a; color:white; border:1px solid #334155;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:1px solid #334155; padding-bottom:15px;">
+                <h3 style="margin:0; color:#38bdf8;"><i class="fas fa-terminal"></i> Cryptanalytic Stress Test</h3>
+                <span id="stress-year" style="font-family:monospace; color:#94a3b8;">Target Year: 2025</span>
+            </div>
+
+            <div id="stress-body" style="height:250px; overflow-y:auto; font-family:'Courier New', monospace; font-size:0.85rem;">
+                </div>
+
+            <div style="margin-top:20px; display:flex; justify-content:flex-end;">
+                <button class="btn btn-outline" style="border-color:#475569; color:#cbd5e1;" onclick="closeStressModal()">Terminate Process</button>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
